@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from datetime import datetime
 from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError
@@ -8,6 +9,8 @@ import dropbox
 
 
 app = Flask(__name__, static_folder='../client/dist/',    static_url_path='/')
+
+CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expert-coder.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
@@ -84,14 +87,16 @@ def add_video():
         code_json = request.json['code_json']
         uid = str(uuid.uuid4())
         try:
-            video_obj = Video(uid=uid, video_id=video_id, title=title, code_json=code_json)
+            video_obj = Video(uid=uid, video_id=video_id,
+                              title=title, code_json=code_json)
             db.session.add(video_obj)
             db.session.commit()
             return dict(video_id=video_id, title=title, code_json=code_json, id=video_obj.uid)
         except Exception as e:
             print(e)
             return jsonify({"message": "Error adding video"}), 500
-        
+
+
 @app.route('/api/videos', methods=['GET'])
 def get_videos():
     video_obj = Video.query.all()
@@ -99,6 +104,7 @@ def get_videos():
     for video in video_obj:
         result.append(dict(title=video.title, id=video.uid))
     return jsonify(result)
+
 
 @app.route('/api/video/<id>', methods=['GET'])
 def get_video_by_id(id):
@@ -113,7 +119,7 @@ def get_video_by_id(id):
 def save_file():
     file = request.files['data']
     filename = request.form['fname']
-    filepath = '/files/' + filename +'.webm'
+    filepath = '/files/' + filename + '.webm'
     upload_file_to_dropbox(file, filepath)
     uid = str(uuid.uuid4())
     file_obj = File(uid=uid, filename=filename, filepath=filepath)
@@ -131,7 +137,8 @@ def get_file(id):
 
 def upload_file_to_dropbox(file_obj, filepath):
     try:
-        dbx.files_upload(file_obj.read(), filepath, mode=WriteMode('overwrite'))
+        dbx.files_upload(file_obj.read(), filepath,
+                         mode=WriteMode('overwrite'))
     except ApiError as err:
         # This checks for the specific error where a user doesn't have
         # enough Dropbox space quota to upload this file
