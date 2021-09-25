@@ -4,17 +4,40 @@ from flask_cors import CORS
 from datetime import datetime
 from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError
+from dotenv import dotenv_values
 import uuid
 import dropbox
+import os
 
+config = dotenv_values()
 
-app = Flask(__name__, static_folder='../client/dist/',    static_url_path='/')
+# static_host = config.get('STATIC_HOST')
+# if static_host == None:
+#     static_host = os.environ.get('STATIC_HOST')
 
-CORS(app)
+static_folder = config.get('STATIC_FOLDER')
+if static_folder == None:
+    static_folder = os.environ.get('STATIC_FOLDER')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expert-coder.db'
+dropbox_token = config.get('DROPBOX_TOKEN')
+if dropbox_token == None:
+    dropbox_token = os.environ.get('DROPBOX_TOKEN')
+
+database_uri = config.get('DATABASE_URI')
+if database_uri == None:
+    database_uri = os.environ.get('DATABASE_URI')
+
+environment = config.get('FLASK_ENV')
+if environment == None:
+    environment = os.environ.get('FLASK_ENV')
+
+app = Flask(__name__, static_folder=static_folder, static_url_path='/')
+if environment == 'development':
+    CORS(app)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-app.config['DROPBOX_TOKEN'] = 'OGlCgFC5QJYAAAAAAAAAAW5IfFYuUFl8gi0Yk2rr2fBEE0Z_lW2cKayusLSFj-L_'
+app.config['DROPBOX_TOKEN'] = dropbox_token
 dbx = dropbox.Dropbox(app.config['DROPBOX_TOKEN'])
 
 db = SQLAlchemy(app)
@@ -154,3 +177,7 @@ def get_file_from_dropbox(path):
     # generate a stream link for file download
     url = dbx.files_get_temporary_link(path).link
     return url
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
