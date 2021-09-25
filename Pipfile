@@ -9,6 +9,7 @@ flask = "*"
 flask-sqlalchemy = "*"
 flask-cors = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 autopep8 = "*"
