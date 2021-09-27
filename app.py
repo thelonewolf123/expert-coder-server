@@ -81,7 +81,7 @@ class File(db.Model):
 @app.route('/videos')
 @app.route('/code/<id>')
 @app.route('/video/<id>/')
-def index(id=1):
+def index(id=None):
     return app.send_static_file('index.html')
 
 
