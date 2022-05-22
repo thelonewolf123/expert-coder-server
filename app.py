@@ -8,6 +8,7 @@ from dotenv import dotenv_values
 import uuid
 import dropbox
 import os
+import ffmpeg
 
 config = dotenv_values()
 
@@ -142,8 +143,16 @@ def get_video_by_id(id):
 def save_file():
     file = request.files['data']
     filename = request.form['fname']
-    filepath = '/files/' + filename + '.webm'
-    upload_file_to_dropbox(file, filepath)
+    filepath = '/files/' + filename + '.mp4'
+    input_file = f'./upload/{str(uuid.uuid4())}.mp4'
+    output_file = f'./upload/{str(uuid.uuid4())}_outut.mp4'
+    file.save(input_file)
+    ffmpeg.input(input_file).output(output_file).run()
+    if os.path.exists(input_file):
+        os.remove(input_file)
+    upload_file_to_dropbox(open(output_file, 'rb'), filepath)
+    if os.path.exists(output_file):
+        os.remove(output_file)
     uid = str(uuid.uuid4())
     file_obj = File(uid=uid, filename=filename, filepath=filepath)
     db.session.add(file_obj)
